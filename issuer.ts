@@ -1,7 +1,7 @@
-//issuer.ts
+
 import { AskarModule } from "@credo-ts/askar";
 import { Agent } from "@credo-ts/core";
-import { AutoAcceptCredential, Connection, ConnectionsModule, CredentialsModule, getDefaultDidcommModules, HttpOutboundTransport, JsonLdCredentialFormatService, V2CredentialProtocol } from "@credo-ts/didcomm";
+import { AutoAcceptCredential, AutoAcceptProof, ConnectionsModule, CredentialsModule, DidCommModule, DifPresentationExchangeProofFormatService, getDefaultDidcommModules, HttpOutboundTransport, JsonLdCredentialFormatService, ProofsModule, V2CredentialProtocol, V2ProofProtocol } from "@credo-ts/didcomm";
 import { agentDependencies, HttpInboundTransport } from "@credo-ts/node";
 import { askar } from '@openwallet-foundation/askar-nodejs'
 
@@ -12,14 +12,14 @@ export const issuer = new Agent({
             id: 'ttpl-wallet',
             key: 'ttpl123'
         }
-     },
+    },
     modules: {
         ...getDefaultDidcommModules({
             endpoints: ['http://localhost:9001/didcomm']
         }),
-        connection: new ConnectionsModule({
+        connections: new ConnectionsModule({
             autoAcceptConnections: true
-          }),
+        }),
         credentials: new CredentialsModule({
             autoAcceptCredentials: AutoAcceptCredential.ContentApproved,
             credentialProtocols: [
@@ -27,12 +27,22 @@ export const issuer = new Agent({
                     credentialFormats: [new JsonLdCredentialFormatService()]
                 })
             ]
-         }),
-        askar: new AskarModule({// This is the module that provides the wallet functionality
+        }),
+        proofs: new ProofsModule({
+            autoAcceptProofs: AutoAcceptProof.ContentApproved,
+            proofProtocols:[
+                new V2ProofProtocol({
+                    proofFormats: [new DifPresentationExchangeProofFormatService()]
+                })
+            ]
+        }),
+        askar: new AskarModule({
             askar
         })
     },
     dependencies: agentDependencies
- });
-issuer.modules.didcomm.registerInboundTransport(new HttpInboundTransport({port:9001, path: '/didcomm'}))// This is the module that provides the inbound transport functionality
-issuer.modules.didcomm.registerOutboundTransport(new HttpOutboundTransport())// This is the module that provides the outbound transport functionality
+})
+issuer.modules.didcomm.registerInboundTransport(new HttpInboundTransport({port: 9001, path: "/didcomm"}))
+// This is the module that provides the inbound transport functionality
+issuer.modules.didcomm.registerOutboundTransport(new HttpOutboundTransport())
+// This is the module that provides the outbound transport functionality
